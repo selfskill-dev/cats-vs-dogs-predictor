@@ -14,7 +14,7 @@ st.markdown("### Upload an image, and the AI will predict whether it's a **Cat**
 # Load the trained model
 @st.cache_resource
 def load_model():
-    model = tf.keras.models.load_model('cats_vs_dogs_model.h5')
+    model = tf.keras.models.load_model('cats_vs_dogs_model.h5')  # or cats_vs_dogs_prediction.h5 if renamed
     return model
 
 model = load_model()
@@ -23,18 +23,16 @@ model = load_model()
 uploaded_file = st.file_uploader("📤 Upload an image of a Cat or Dog", type=["jpg", "jpeg", "png"])
 
 if uploaded_file is not None:
-    # Display image preview
     img = Image.open(uploaded_file)
     st.image(img, caption="🖼️ Uploaded Image", use_container_width=True)
 
-    # Add Predict button
     if st.button("🔍 Predict"):
         with st.spinner("Analyzing image... Please wait ⏳"):
-            # Preprocess image
-            img = img.resize((150, 150))
+            # ✅ Correct preprocessing for MobileNetV2
+            img = img.resize((160, 160))
             img_array = image.img_to_array(img)
             img_array = np.expand_dims(img_array, axis=0)
-            img_array = img_array / 255.0
+            img_array = tf.keras.applications.mobilenet_v2.preprocess_input(img_array)
 
             # Predict
             prediction = model.predict(img_array)[0][0]
@@ -46,6 +44,3 @@ if uploaded_file is not None:
             st.write(f"**Confidence:** {confidence}%")
 else:
     st.info("👆 Please upload an image to start prediction.")
-
-
-
