@@ -1,46 +1,50 @@
 import streamlit as st
 import tensorflow as tf
-from tensorflow.keras.preprocessing import image
 import numpy as np
 from PIL import Image
 
-# Page configuration
-st.set_page_config(page_title="Cat vs Dog Classifier 🐱🐶", layout="centered")
+# App configuration
+st.set_page_config(page_title="🐱🐶 Cat vs Dog Classifier", layout="centered")
 
-# Header
 st.title("🐶🐱 Cat vs Dog Image Classifier")
-st.markdown("### Upload an image, and the AI will predict whether it's a **Cat** or a **Dog**!")
+st.markdown("### Upload an image, and the AI will tell you if it's a **Cat** or a **Dog**!")
 
-# Load the trained model
 @st.cache_resource
 def load_model():
-    model = tf.keras.models.load_model('cats_vs_dogs_model.h5')  # or cats_vs_dogs_prediction.h5 if renamed
-    return model
+    try:
+        model = tf.keras.models.load_model("cats_vs_dogs_model.h5", compile=False)
+        return model
+    except Exception as e:
+        st.error(f"⚠️ Failed to load model: {e}")
+        st.stop()
 
 model = load_model()
 
-# Upload image
-uploaded_file = st.file_uploader("📤 Upload an image of a Cat or Dog", type=["jpg", "jpeg", "png"])
+uploaded_file = st.file_uploader("📤 Upload a cat or dog image", type=["jpg", "jpeg", "png"])
 
-if uploaded_file is not None:
-    img = Image.open(uploaded_file)
-    st.image(img, caption="🖼️ Uploaded Image", use_container_width=True)
+if uploaded_file:
+    image = Image.open(uploaded_file).convert("RGB")
+    st.image(image, caption="🖼️ Uploaded Image", use_container_width=True)
 
     if st.button("🔍 Predict"):
-        with st.spinner("Analyzing image... Please wait ⏳"):
-            # ✅ Correct preprocessing for MobileNetV2
-            img = img.resize((160, 160))
-            img_array = image.img_to_array(img)
-            img_array = np.expand_dims(img_array, axis=0)
-            img_array = tf.keras.applications.mobilenet_v2.preprocess_input(img_array)
+        with st.spinner("Analyzing... Please wait ⏳"):
+            try:
+                # Resize and preprocess
+                img = image.resize((160, 160))
+                img_array = tf.keras.utils.img_to_array(img)
+                img_array = np.expand_dims(img_array, axis=0)
+                img_array = tf.keras.applications.mobilenet_v2.preprocess_input(img_array)
 
-            # Predict
-            prediction = model.predict(img_array)[0][0]
-            confidence = round(prediction * 100, 2) if prediction > 0.5 else round((1 - prediction) * 100, 2)
-            label = "🐶 Dog" if prediction > 0.5 else "🐱 Cat"
+                # Prediction
+                preds = model.predict(img_array)
+                pred = preds[0][0]
 
-            # Display result
-            st.success(f"### ✅ Prediction: {label}")
-            st.write(f"**Confidence:** {confidence}%")
+                label = "🐶 Dog" if pred > 0.5 else "🐱 Cat"
+                confidence = round(pred * 100, 2) if pred > 0.5 else round((1 - pred) * 100, 2)
+
+                st.success(f"### ✅ Prediction: {label}")
+                st.write(f"**Confidence:** {confidence}%")
+            except Exception as e:
+                st.error(f"⚠️ Prediction error: {e}")
 else:
     st.info("👆 Please upload an image to start prediction.")
