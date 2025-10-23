@@ -14,7 +14,7 @@ st.markdown("### Upload an image, and the AI will predict whether it's a **Cat**
 # Load the trained model
 @st.cache_resource
 def load_model():
-    model = tf.keras.models.load_model('cats_vs_dogs_prediction.h5')
+    model = tf.keras.models.load_model('cats_vs_dogs_model.h5')
     return model
 
 model = load_model()
@@ -46,5 +46,6 @@ if uploaded_file is not None:
             st.write(f"**Confidence:** {confidence}%")
 else:
     st.info("👆 Please upload an image to start prediction.")
+
 
 
